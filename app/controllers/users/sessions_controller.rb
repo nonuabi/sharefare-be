@@ -1,35 +1,57 @@
-# frozen_string_literal: true
-
 class Users::SessionsController < Devise::SessionsController
+  skip_before_action :verify_signed_out_user, only: :destroy
   respond_to :json
 
-  private
+  # POST /login
+  def create
+    authenticated_resource = warden.authenticate(auth_options)
+    unless authenticated_resource
+      return render json: {
+        status: { code: 401, message: "Invalid email or password." }
+      }, status: :unauthorized
+    end
+    self.resource = authenticated_resource
+    # no cookie session
+    sign_in(resource_name, resource, store: false)
 
-  def respond_with(current_user, _opts = {})
+    # Explicitly generate and expose JWT in both header and body
+    token, _payload = Warden::JWTAuth::UserEncoder.new.call(resource, :user, nil)
+    response.set_header("Authorization", "Bearer #{token}")
+
+    user_json = {
+      id: resource.id,
+      email: resource.email,
+      name: resource.name
+    }
+
     render json: {
-      status: {
-        code: 200, message: "Logged in successfully.",
-        data: { user: UserSerializer.new(current_user).serializable_hash[:data][:attributes] }
-      }
+      status: { code: 200, message: "Logged in successfully." },
+      data: user_json,
+      token: token
     }, status: :ok
   end
 
-  def respond_to_on_destroy
-    if request.headers["Authorization"].present?
-      jwt_payload = JWT.decode(request.headers["Authorization"].split(" ").last, Rails.application.credentials.devise_jwt_secret_key!).first
-      current_user = User.find(jwt_payload["sub"])
-    end
-
+  # DELETE /logout
+  def destroy
+    # Revoke JWT using Devise's revocation strategy (e.g., JTIMatcher)
     if current_user
-      render json: {
-        status: 200,
-        message: "Logged out successfully."
-      }, status: :ok
+      sign_out(resource_name)
+      render json: { status: 200, message: "Logged out successfully." }, status: :ok
     else
-      render json: {
-        status: 401,
-        message: "Couldn't find an active session."
-      }, status: :unauthorized
+      render json: { status: 401, message: "No active session or invalid token." }, status: :unauthorized
     end
+  end
+
+  private
+
+  def respond_with(_resource, _opts = {})
+    render json: {
+      status: { code: 200, message: "Logged in successfully." },
+      data: {
+        id: resource.id,
+        email: resource.email,
+        name: resource.name
+      }
+    }, status: :ok
   end
 end
