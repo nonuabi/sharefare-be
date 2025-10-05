@@ -1,5 +1,10 @@
 class ApplicationController < ActionController::API
+  before_action :authenticate_user!
   before_action :configure_permitted_parameters, if: :devise_controller?
+
+  rescue_from ActiveRecord::RecordNotFound do
+    render json: { error: { code: "not_found", message: "Not found" } }, status: :not_found
+  end
 
   protected
 
