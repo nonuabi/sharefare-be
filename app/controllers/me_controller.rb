@@ -1,9 +1,16 @@
 class MeController < ApplicationController
   def show
     render json: {
-      status: { code: 200, message: "OK" },
       data: user_payload(current_user)
     }, status: :ok
+  end
+
+  def update
+    if current_user.update(profile_params)
+      render json: user_payload(current_user), status: :ok
+    else
+      render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
 
@@ -16,5 +23,9 @@ class MeController < ApplicationController
       name: user.name,
       created_at: user.created_at&.iso8601
     }
+  end
+
+  def profile_params
+    params.permit(:name, :email)
   end
 end
