@@ -7,7 +7,7 @@ class Users::SessionsController < Devise::SessionsController
     authenticated_resource = warden.authenticate(auth_options)
     unless authenticated_resource
       return render json: {
-        status: { code: 401, message: "Invalid email or password." }
+        status: { code: 401, message: 'Invalid email or password.' }
       }, status: :unauthorized
     end
     self.resource = authenticated_resource
@@ -16,7 +16,7 @@ class Users::SessionsController < Devise::SessionsController
 
     # Explicitly generate and expose JWT in both header and body
     token, _payload = Warden::JWTAuth::UserEncoder.new.call(resource, :user, nil)
-    response.set_header("Authorization", "Bearer #{token}")
+    response.set_header('Authorization', "Bearer #{token}")
 
     user_json = {
       id: resource.id,
@@ -25,7 +25,7 @@ class Users::SessionsController < Devise::SessionsController
     }
 
     render json: {
-      status: { code: 200, message: "Logged in successfully." },
+      status: { code: 200, message: 'Logged in successfully.' },
       data: user_json,
       token: token
     }, status: :ok
@@ -36,9 +36,9 @@ class Users::SessionsController < Devise::SessionsController
     # Revoke JWT using Devise's revocation strategy (e.g., JTIMatcher)
     if current_user
       sign_out(resource_name)
-      render json: { status: 200, message: "Logged out successfully." }, status: :ok
+      render json: { status: 200, message: 'Logged out successfully.' }, status: :ok
     else
-      render json: { status: 401, message: "No active session or invalid token." }, status: :unauthorized
+      render json: { status: 401, message: 'No active session or invalid token.' }, status: :unauthorized
     end
   end
 
@@ -46,7 +46,7 @@ class Users::SessionsController < Devise::SessionsController
 
   def respond_with(_resource, _opts = {})
     render json: {
-      status: { code: 200, message: "Logged in successfully." },
+      status: { code: 200, message: 'Logged in successfully.' },
       data: {
         id: resource.id,
         email: resource.email,
