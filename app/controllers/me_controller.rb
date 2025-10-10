@@ -13,7 +13,6 @@ class MeController < ApplicationController
     end
   end
 
-
   private
 
   def user_payload(user)
