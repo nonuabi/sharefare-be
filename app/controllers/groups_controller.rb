@@ -2,19 +2,35 @@ class GroupsController < ApplicationController
   before_action :check_logged_in_user
 
   def create
-    group = Group.new(group_params)
+    group = Group.new(group_base_params)
     group.owner = current_user
 
-    if group.save! && group_params[:member_ids].present?
-      group_params[:member_ids].each do |member_id|
-        group.group_members.create!(user_id: member_id)
-      end
-    end
+    if group.save
+      members = members_params
+      if members.present?
+        members.each do |member|
+          is_new = ActiveModel::Type::Boolean.new.cast(member[:newUser])
+          if is_new
+            temp_password = 'Temp@1234'
+            user = User.create!(email: member[:email], password: temp_password, password_confirmation: temp_password,
+                                name: "Invited By #{current_user.name}")
+            group.group_members.create!(user_id: user.id)
+          else
+            user = User.find_by(id: member[:id], email: member[:email])
+            next unless user
 
-    render json: { message: 'Group created successfully', group: }, status: :ok
+            group.group_members.create!(user_id: user.id) unless group.users.include?(user)
+          end
+        end
+      end
+
+      render json: { message: 'Group created successfully', group: }, status: :ok
+    else
+      render json: { error: 'Error creating group', message: group.errors.full_messages }, status: :bad_request
+    end
   rescue StandardError => e
-    rails.logger.info { "Group not able to created: #{e.full_message}" }
-    group.destroy
+    Rails.logger.info { "Group not able to be created: #{e.full_message}" }
+    group.destroy if group&.persisted?
     render json: { error: 'Error creating group', message: e.full_message }, status: :bad_request
   end
 
@@ -22,7 +38,10 @@ class GroupsController < ApplicationController
     group = find_user
     return render json: { error: 'Invalid group' }, status: :not_found unless group
 
-    return render json: { message: 'Group updated successfully', group: }, status: :ok if group.update(group_params)
+    if group.update(group_base_params)
+      return render json: { message: 'Group updated successfully', group: },
+                    status: :ok
+    end
 
     render json: { error: 'Group not updated' }, status: :bad_request
   end
@@ -45,8 +64,13 @@ class GroupsController < ApplicationController
     render json: { error: 'User not logged in' }, status: :not_found unless current_user
   end
 
-  def group_params
-    params.require(:group).permit(:name, :description, :member_ids)
+  def group_base_params
+    params.permit(:name, :description)
+  end
+
+  def members_params
+    permitted = params.permit(members: %i[email id name newUser])
+    permitted[:members]
   end
 
   def find_user
