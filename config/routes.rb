@@ -20,5 +20,7 @@ Rails.application.routes.draw do
     patch '/me', to: 'me#update'
 
     resources :groups, only: %i[show index create update]
+
+    resources :users, only: [:index]
   end
 end
