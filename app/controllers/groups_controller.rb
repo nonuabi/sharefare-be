@@ -48,7 +48,7 @@ class GroupsController < ApplicationController
 
   def index
     groups = Group.joins(:group_members).where('groups.owner_id = ? OR group_members.user_id = ?',
-                                               current_user.id, current_user.id).distinct
+                                               current_user.id, current_user.id).distinct.order(created_at: :desc)
     render json: { groups: }, status: :ok
   end
 
