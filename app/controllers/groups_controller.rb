@@ -4,8 +4,8 @@ class GroupsController < ApplicationController
   def create
     group = Group.new(group_base_params)
     group.owner = current_user
-
     if group.save
+      group.group_members.create!(user_id: current_user.id)
       members = members_params
       if members.present?
         members.each do |member|
