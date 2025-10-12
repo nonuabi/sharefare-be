@@ -49,7 +49,7 @@ class GroupsController < ApplicationController
   def index
     groups = Group.joins(:group_members).where('groups.owner_id = ? OR group_members.user_id = ?',
                                                current_user.id, current_user.id).distinct.order(created_at: :desc)
-    render json: { groups: }, status: :ok
+    render json: { groups: groups.map { |group| group_json(group) } }, status: :ok
   end
 
   def show
@@ -76,5 +76,11 @@ class GroupsController < ApplicationController
 
   def find_user
     Group.includes(:users).find_by(id: params[:id])
+  end
+
+  def group_json(group)
+    group.as_json(only: %i[id name description owner_id created_at updated_at]).merge(
+      member_count: group.users&.count || 0
+    )
   end
 end
