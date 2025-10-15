@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 20_251_014_101_851) do
+ActiveRecord::Schema[8.0].define(version: 20_251_015_102_355) do
   # These are extensions that must be enabled in order to support this database
   enable_extension 'pg_catalog.plpgsql'
 
@@ -70,6 +70,16 @@ ActiveRecord::Schema[8.0].define(version: 20_251_014_101_851) do
     t.index ['email'], name: 'index_users_on_email', unique: true
     t.index ['jti'], name: 'index_users_on_jti'
     t.index ['reset_password_token'], name: 'index_users_on_reset_password_token', unique: true
+  end
+
+  create_table 'versions', force: :cascade do |t|
+    t.string 'whodunnit'
+    t.datetime 'created_at'
+    t.bigint 'item_id', null: false
+    t.string 'item_type', null: false
+    t.string 'event', null: false
+    t.text 'object'
+    t.index %w[item_type item_id], name: 'index_versions_on_item_type_and_item_id'
   end
 
   add_foreign_key 'expenses', 'groups'
