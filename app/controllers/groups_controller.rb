@@ -7,7 +7,7 @@ class GroupsController < ApplicationController
   def create
     group = Group.new(group_base_params)
     group.owner = current_user
-    if group.save
+    if group.save!
       group.group_members.create!(user_id: current_user.id)
       members = members_params
       if members.present?
@@ -27,14 +27,14 @@ class GroupsController < ApplicationController
         end
       end
 
-      render json: { message: 'Group created successfully', group: }, status: :ok
+      render json: { message: 'Group created successfully', group: group, group_members: group.users }, status: :ok
     else
-      render json: { error: 'Error creating group', message: group.errors.full_messages }, status: :bad_request
+      render json: { error: 'Error creating group', message: group.messages }, status: :bad_request
     end
   rescue StandardError => e
     Rails.logger.info { "Group not able to be created: #{e.full_message}" }
     group.destroy if group&.persisted?
-    render json: { error: 'Error creating group', message: e.full_message }, status: :bad_request
+    render json: { error: 'Error creating group', message: e.message }, status: :bad_request
   end
 
   def update
@@ -71,7 +71,7 @@ class GroupsController < ApplicationController
   end
 
   def members_params
-    permitted = params.permit(members: %i[email id name newUser])
+    permitted = params.require(:group).permit(members: %i[email id name newUser])
     permitted[:members]
   end
 
