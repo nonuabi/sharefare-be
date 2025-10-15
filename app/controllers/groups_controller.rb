@@ -27,7 +27,8 @@ class GroupsController < ApplicationController
         end
       end
 
-      render json: { message: 'Group created successfully', group: group, group_members: group.users }, status: :ok
+      render json: { message: 'Group created successfully', group: group_json(group), group_members: group.users },
+             status: :ok
     else
       render json: { error: 'Error creating group', message: group.messages }, status: :bad_request
     end
