@@ -10,9 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 20_251_008_135_148) do
+ActiveRecord::Schema[8.0].define(version: 20_251_014_101_851) do
   # These are extensions that must be enabled in order to support this database
   enable_extension 'pg_catalog.plpgsql'
+
+  create_table 'expenses', force: :cascade do |t|
+    t.bigint 'group_id', null: false
+    t.float 'paid_amount'
+    t.boolean 'is_settled', default: false
+    t.bigint 'payer_id', null: false
+    t.bigint 'creator_id', null: false
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
+    t.index ['creator_id'], name: 'index_expenses_on_creator_id'
+    t.index ['group_id'], name: 'index_expenses_on_group_id'
+    t.index ['payer_id'], name: 'index_expenses_on_payer_id'
+  end
 
   create_table 'group_members', force: :cascade do |t|
     t.bigint 'user_id', null: false
@@ -32,6 +45,18 @@ ActiveRecord::Schema[8.0].define(version: 20_251_008_135_148) do
     t.index ['owner_id'], name: 'index_groups_on_owner_id'
   end
 
+  create_table 'split_expenses', force: :cascade do |t|
+    t.float 'paid_amount', default: 0.0
+    t.float 'due_amount', default: 0.0
+    t.boolean 'is_settled', default: false
+    t.bigint 'expense_id', null: false
+    t.bigint 'user_id', null: false
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
+    t.index ['expense_id'], name: 'index_split_expenses_on_expense_id'
+    t.index ['user_id'], name: 'index_split_expenses_on_user_id'
+  end
+
   create_table 'users', force: :cascade do |t|
     t.string 'email', default: '', null: false
     t.string 'encrypted_password', default: '', null: false
@@ -47,7 +72,12 @@ ActiveRecord::Schema[8.0].define(version: 20_251_008_135_148) do
     t.index ['reset_password_token'], name: 'index_users_on_reset_password_token', unique: true
   end
 
+  add_foreign_key 'expenses', 'groups'
+  add_foreign_key 'expenses', 'users', column: 'creator_id'
+  add_foreign_key 'expenses', 'users', column: 'payer_id'
   add_foreign_key 'group_members', 'groups'
   add_foreign_key 'group_members', 'users'
   add_foreign_key 'groups', 'users', column: 'owner_id'
+  add_foreign_key 'split_expenses', 'expenses'
+  add_foreign_key 'split_expenses', 'users'
 end
