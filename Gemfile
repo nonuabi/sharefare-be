@@ -1,19 +1,22 @@
-source "https://rubygems.org"
-gem "rails", "~> 8.0.1"
-gem "pg", "~> 1.1"
-gem "puma", ">= 5.0"
-gem "tzinfo-data", platforms: %i[ windows jruby ]
-gem "bootsnap", require: false
-gem "kamal", require: false
-gem "thruster", require: false
-gem "devise", "~> 4.9", ">= 4.9.4"
-gem "devise-jwt"
-gem "jsonapi-serializer"
-gem "rack-cors"
-gem "byebug"
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+gem 'bootsnap', require: false
+gem 'byebug'
+gem 'devise', '~> 4.9', '>= 4.9.4'
+gem 'devise-jwt'
+gem 'dotenv'
+gem 'jsonapi-serializer'
+gem 'kamal', require: false
+gem 'pg', '~> 1.1'
+gem 'puma', '>= 5.0'
+gem 'rack-cors'
+gem 'rails', '~> 8.0.1'
+gem 'thruster', require: false
+gem 'tzinfo-data', platforms: %i[windows jruby]
 
 group :development, :test do
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
-  gem "brakeman", require: false
-  gem "rubocop-rails-omakase", require: false
+  gem 'brakeman', require: false
+  gem 'debug', platforms: %i[mri windows], require: 'debug/prelude'
+  gem 'rubocop-rails-omakase', require: false
 end

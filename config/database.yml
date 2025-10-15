@@ -17,3 +17,4 @@ production:
   username: <%= ENV["SHAREFARE_BE_DATABASE_USERNAME"] %>
   password: <%= ENV["SHAREFARE_BE_DATABASE_PASSWORD"] %>
   host: <%= ENV["SHAREFARE_BE_DATABASE_HOST"]%>
+  port: 5432
