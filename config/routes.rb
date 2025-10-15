@@ -19,7 +19,9 @@ Rails.application.routes.draw do
     get '/me', to: 'me#show'
     patch '/me', to: 'me#update'
 
-    resources :groups, only: %i[show index create update]
+    resources :groups, only: %i[show index create update] do
+      resources :expenses, only: %i[index create]
+    end
 
     resources :users, only: [:index]
   end

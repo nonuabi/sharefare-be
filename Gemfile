@@ -8,6 +8,7 @@ gem 'devise-jwt'
 gem 'dotenv'
 gem 'jsonapi-serializer'
 gem 'kamal', require: false
+gem 'paper_trail'
 gem 'pg', '~> 1.1'
 gem 'puma', '>= 5.0'
 gem 'rack-cors'

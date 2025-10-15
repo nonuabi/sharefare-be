@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 class GroupsController < ApplicationController
   before_action :check_logged_in_user
+  before_action :find_group, only: %i[show update]
 
   def create
     group = Group.new(group_base_params)
@@ -13,7 +16,7 @@ class GroupsController < ApplicationController
           if is_new
             temp_password = 'Temp@1234'
             user = User.create!(email: member[:email], password: temp_password, password_confirmation: temp_password,
-                                name: "Invited By #{current_user.name}")
+                                name: "(New) #{member[:email]}")
             group.group_members.create!(user_id: user.id)
           else
             user = User.find_by(id: member[:id], email: member[:email])
@@ -35,11 +38,10 @@ class GroupsController < ApplicationController
   end
 
   def update
-    group = find_user
-    return render json: { error: 'Invalid group' }, status: :not_found unless group
+    return render json: { error: 'Invalid group' }, status: :not_found unless @group
 
-    if group.update(group_base_params)
-      return render json: { message: 'Group updated successfully', group: },
+    if @group.update(group_base_params)
+      return render json: { message: 'Group updated successfully', group: @group },
                     status: :ok
     end
 
@@ -53,10 +55,9 @@ class GroupsController < ApplicationController
   end
 
   def show
-    group = find_user
-    return render json: { error: 'Invalid group' }, status: :not_found unless group
+    return render json: { error: 'Invalid group' }, status: :not_found unless @group
 
-    render json: { group:, group_members: group.users }, status: :ok
+    render json: { group: @group, group_members: @group.users }, status: :ok
   end
 
   private
@@ -66,7 +67,7 @@ class GroupsController < ApplicationController
   end
 
   def group_base_params
-    params.permit(:name, :description)
+    params.require(:group).permit(:name, :description)
   end
 
   def members_params
@@ -74,8 +75,11 @@ class GroupsController < ApplicationController
     permitted[:members]
   end
 
-  def find_user
-    Group.includes(:users).find_by(id: params[:id])
+  def find_group
+    @group = Group.includes(:users).find_by(id: params[:id] || params[:group_id])
+    return if @group
+
+    render json: { error: 'Group not found!' }, status: :not_found
   end
 
   def group_json(group)
