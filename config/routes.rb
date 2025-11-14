@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   scope :api do
     get '/me', to: 'me#show'
     patch '/me', to: 'me#update'
+    get '/dashboard', to: 'dashboard#show'
 
     resources :groups, only: %i[show index create update] do
       resources :expenses, only: %i[index create]
