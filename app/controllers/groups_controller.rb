@@ -58,7 +58,7 @@ class GroupsController < ApplicationController
   def show
     return render json: { error: 'Invalid group' }, status: :not_found unless @group
 
-    render json: { group: @group, group_members: @group.users }, status: :ok
+    render json: @group, serializer: GroupSerializer, current_user: current_user, status: :ok
   end
 
   private

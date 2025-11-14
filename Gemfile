@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 source 'https://rubygems.org'
+gem 'active_model_serializers'
 gem 'bootsnap', require: false
 gem 'byebug'
 gem 'devise', '~> 4.9', '>= 4.9.4'
