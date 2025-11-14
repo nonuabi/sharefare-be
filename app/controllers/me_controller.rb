@@ -20,6 +20,7 @@ class MeController < ApplicationController
       id: user.id,
       email: user.email,
       name: user.name,
+      avatar_url: user.avatar_url_or_generate,
       created_at: user.created_at&.iso8601
     }
   end

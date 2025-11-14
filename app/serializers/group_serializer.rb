@@ -15,7 +15,8 @@ class GroupSerializer < ActiveModel::Serializer
       {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        avatar_url: user.avatar_url_or_generate
       }
     end
   end
@@ -43,7 +44,8 @@ class GroupSerializer < ActiveModel::Serializer
         user: {
           id: user.id,
           name: user.name,
-          email: user.email
+          email: user.email,
+          avatar_url: user.avatar_url_or_generate
         },
         balance: balance,
         owes_you: balance > 0 ? balance : 0,
@@ -65,7 +67,8 @@ class GroupSerializer < ActiveModel::Serializer
         paid_by: {
           id: expense.payer.id,
           name: expense.payer.name,
-          email: expense.payer.email
+          email: expense.payer.email,
+          avatar_url: expense.payer.avatar_url_or_generate
         },
         created_at: expense.created_at,
         notes: expense.notes,

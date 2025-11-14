@@ -50,12 +50,13 @@ class DashboardController < ApplicationController
               outstanding_balances_hash[other_user.id][:direction] = '-'
             end
           else
-            outstanding_balances_hash[other_user.id] = {
-              user: {
-                id: other_user.id,
-                name: other_user.name,
-                email: other_user.email
-              },
+              outstanding_balances_hash[other_user.id] = {
+                user: {
+                  id: other_user.id,
+                  name: other_user.name,
+                  email: other_user.email,
+                  avatar_url: other_user.avatar_url_or_generate
+                },
               amount: net_amount,
               direction: net_amount > 0 ? '+' : '-'
             }
@@ -88,11 +89,12 @@ class DashboardController < ApplicationController
           id: expense.id,
           description: expense.description,
           amount: expense.paid_amount,
-          paid_by: {
-            id: expense.payer.id,
-            name: expense.payer.name,
-            email: expense.payer.email
-          },
+                paid_by: {
+                  id: expense.payer.id,
+                  name: expense.payer.name,
+                  email: expense.payer.email,
+                  avatar_url: expense.payer.avatar_url_or_generate
+                },
           group: {
             id: expense.group.id,
             name: expense.group.name

@@ -26,4 +26,7 @@ Rails.application.routes.draw do
 
     resources :users, only: [:index]
   end
+
+  # Avatar endpoint (outside API scope, no auth required for public avatars)
+  get '/avatars/:id', to: 'avatars#show', as: :avatar
 end
