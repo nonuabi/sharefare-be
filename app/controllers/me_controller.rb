@@ -22,7 +22,13 @@ class MeController < ApplicationController
       phone_number: user.phone_number,
       name: user.name,
       avatar_url: user.avatar_url_or_generate,
-      created_at: user.created_at&.iso8601
+      created_at: user.created_at&.iso8601,
+      stats: {
+        total_groups: user.groups.count,
+        owned_groups: user.owned_groups.count,
+        total_expenses: Expense.where(creator_id: user.id).count,
+        total_spent: Expense.where(creator_id: user.id).sum(:paid_amount).round(2)
+      }
     }
   end
 
