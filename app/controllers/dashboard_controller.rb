@@ -2,7 +2,16 @@
 
 class DashboardController < ApplicationController
   def show
-    user_groups = current_user.groups.includes(:users, :expenses, :split_expenses)
+    Rails.logger.info { "Dashboard request started for user #{current_user.id}" }
+    
+    # Eager load associations to avoid N+1 queries
+    user_groups = current_user.groups.includes(
+      :users, 
+      expenses: :split_expenses,
+      split_expenses: :expense
+    )
+    
+    Rails.logger.info { "Found #{user_groups.count} groups for user #{current_user.id}" }
     
     # Calculate totals across all groups
     total_owed_to_me = 0.0
@@ -10,35 +19,47 @@ class DashboardController < ApplicationController
     outstanding_balances_hash = {}
     
     user_groups.each do |group|
-      balance = group.balance_for_user(current_user)
-      if balance > 0
-        total_owed_to_me += balance
-      elsif balance < 0
-        total_i_owe += balance.abs
+      begin
+        balance = group.balance_for_user(current_user)
+        if balance > 0
+          total_owed_to_me += balance
+        elsif balance < 0
+          total_i_owe += balance.abs
+        end
+      rescue => e
+        Rails.logger.error { "Error calculating balance for group #{group.id}: #{e.message}" }
+        next
       end
       
       # Calculate balances with each member in this group
-      group.users.where.not(id: current_user.id).each do |other_user|
-        # For each expense in this group, calculate net balance with this user
-        amount_they_owe_me = 0.0
-        amount_i_owe_them = 0.0
-        
-        group.expenses.includes(:split_expenses).each do |expense|
-          my_split = expense.split_expenses.find_by(user_id: current_user.id)
-          their_split = expense.split_expenses.find_by(user_id: other_user.id)
+      group_users = group.users.where.not(id: current_user.id).to_a
+      next if group_users.empty?
+      
+      group_users.each do |other_user|
+        begin
+          # Calculate net balance between current_user and other_user
+          # This is: (what other_user owes me) - (what I owe other_user)
           
-          next unless my_split && their_split
+          # What other_user owes me: their share in expenses where I paid
+          amount_they_owe_me = group.split_expenses
+            .joins(:expense)
+            .where(expenses: { payer_id: current_user.id })
+            .where(user_id: other_user.id)
+            .sum(:due_amount)
           
-          if expense.payer_id == current_user.id
-            # I paid, they owe me their share
-            amount_they_owe_me += their_split.due_amount
-          elsif expense.payer_id == other_user.id
-            # They paid, I owe them my share
-            amount_i_owe_them += my_split.due_amount
-          end
+          # What I owe other_user: my share in expenses where they paid
+          # Handle both old format (due_amount = 0, share in paid_amount) and new format
+          amount_i_owe_them = group.split_expenses
+            .joins(:expense)
+            .where(expenses: { payer_id: other_user.id })
+            .where(user_id: current_user.id)
+            .sum("COALESCE(NULLIF(split_expenses.due_amount, 0), split_expenses.paid_amount)")
+          
+          net_amount = amount_they_owe_me - amount_i_owe_them
+        rescue => e
+          Rails.logger.error { "Error calculating balance with user #{other_user.id}: #{e.message}" }
+          next
         end
-        
-        net_amount = amount_they_owe_me - amount_i_owe_them
         
         if net_amount.abs > 0.01 # Only include if significant
           if outstanding_balances_hash[other_user.id]
@@ -55,6 +76,7 @@ class DashboardController < ApplicationController
                   id: other_user.id,
                   name: other_user.name,
                   email: other_user.email,
+                  phone_number: other_user.phone_number,
                   avatar_url: other_user.avatar_url_or_generate
                 },
               amount: net_amount,
@@ -93,6 +115,7 @@ class DashboardController < ApplicationController
                   id: expense.payer.id,
                   name: expense.payer.name,
                   email: expense.payer.email,
+                  phone_number: expense.payer.phone_number,
                   avatar_url: expense.payer.avatar_url_or_generate
                 },
           group: {
@@ -103,6 +126,8 @@ class DashboardController < ApplicationController
         }
       end
     
+    Rails.logger.info { "Dashboard calculation completed for user #{current_user.id}" }
+    
     render json: {
       total_owed_to_me: total_owed_to_me.round(2),
       total_i_owe: total_i_owe.round(2),
@@ -111,6 +136,7 @@ class DashboardController < ApplicationController
     }, status: :ok
   rescue StandardError => e
     Rails.logger.error { "Dashboard error: #{e.full_message}" }
+    Rails.logger.error { e.backtrace.first(10).join("\n") }
     render json: { error: 'Error fetching dashboard data', message: e.message }, status: :unprocessable_entity
   end
 end

@@ -16,6 +16,7 @@ class GroupSerializer < ActiveModel::Serializer
         id: user.id,
         name: user.name,
         email: user.email,
+        phone_number: user.phone_number,
         avatar_url: user.avatar_url_or_generate
       }
     end
@@ -39,12 +40,32 @@ class GroupSerializer < ActiveModel::Serializer
     current_user = instance_options[:current_user]
     
     object.users.map do |user|
-      balance = object.balance_for_user(user)
+      # Calculate pairwise balance between current_user and this user
+      # This is: (what user owes current_user) - (what current_user owes user)
+      
+      # What user owes current_user: user's share in expenses where current_user paid
+      amount_they_owe_me = object.split_expenses
+        .joins(:expense)
+        .where(expenses: { payer_id: current_user.id })
+        .where(user_id: user.id)
+        .sum(:due_amount)
+      
+      # What current_user owes user: current_user's share in expenses where user paid
+      amount_i_owe_them = object.split_expenses
+        .joins(:expense)
+        .where(expenses: { payer_id: user.id })
+        .where(user_id: current_user.id)
+        .sum(:due_amount)
+      
+      # Net balance from current_user's perspective
+      balance = amount_they_owe_me - amount_i_owe_them
+      
       {
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
+          phone_number: user.phone_number,
           avatar_url: user.avatar_url_or_generate
         },
         balance: balance,
@@ -68,6 +89,7 @@ class GroupSerializer < ActiveModel::Serializer
           id: expense.payer.id,
           name: expense.payer.name,
           email: expense.payer.email,
+          phone_number: expense.payer.phone_number,
           avatar_url: expense.payer.avatar_url_or_generate
         },
         created_at: expense.created_at,

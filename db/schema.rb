@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_182335) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_183035) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,7 +60,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_182335) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "email", default: "", null: false
+    t.string "email", default: ""
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
@@ -70,8 +70,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_182335) do
     t.string "jti"
     t.string "name"
     t.text "avatar_svg"
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.string "phone_number"
+    t.index ["email"], name: "index_users_on_email", unique: true, where: "(email IS NOT NULL)"
     t.index ["jti"], name: "index_users_on_jti"
+    t.index ["phone_number"], name: "index_users_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 

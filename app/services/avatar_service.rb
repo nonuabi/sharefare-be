@@ -27,7 +27,7 @@ class AvatarService
 
   def initialize(user)
     @user = user
-    @identifier = user.email || user.name || "user#{user.id}"
+    @identifier = user.identifier_for_avatar
   end
 
   def generate_avatar_url

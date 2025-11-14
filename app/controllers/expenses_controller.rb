@@ -24,8 +24,14 @@ class ExpensesController < GroupsController
       split_amount = split_amount(expense_params[:amount], splits.size)
       splits.each do |user_id|
         if user_id.to_i == expense_params[:paidBy].to_i
-          expense.split_expenses.create!(user_id: user_id, paid_amount: split_amount, due_amount: 0.0)
+          # Payer: they paid the full amount, but their share is split_amount
+          expense.split_expenses.create!(
+            user_id: user_id, 
+            paid_amount: expense_params[:amount].to_f, 
+            due_amount: split_amount
+          )
         else
+          # Non-payer: they didn't pay anything, but owe split_amount
           expense.split_expenses.create!(user_id: user_id, paid_amount: 0.0, due_amount: split_amount)
         end
       end
@@ -34,8 +40,14 @@ class ExpensesController < GroupsController
       split_amount = split_amount(expense_params[:amount], group_members.size)
       group_members.each do |user|
         if user.id == expense_params[:paidBy].to_i
-          expense.split_expenses.create!(user_id: user.id, paid_amount: split_amount, due_amount: 0.0)
+          # Payer: they paid the full amount, but their share is split_amount
+          expense.split_expenses.create!(
+            user_id: user.id, 
+            paid_amount: expense_params[:amount].to_f, 
+            due_amount: split_amount
+          )
         else
+          # Non-payer: they didn't pay anything, but owe split_amount
           expense.split_expenses.create!(user_id: user.id, paid_amount: 0.0, due_amount: split_amount)
         end
       end

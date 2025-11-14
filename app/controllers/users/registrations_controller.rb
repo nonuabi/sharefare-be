@@ -11,7 +11,12 @@ class Users::RegistrationsController < Devise::RegistrationsController
       token, _payload = Warden::JWTAuth::UserEncoder.new.call(resource, :user, nil)
       response.set_header("Authorization", "Bearer #{token}")
 
-      user_json = { id: resource.id, email: resource.email, name: resource.name }
+      user_json = { 
+        id: resource.id, 
+        email: resource.email, 
+        phone_number: resource.phone_number,
+        name: resource.name 
+      }
 
       render json: {
         status: { code: 201, message: "Signed up successfully." },
@@ -26,11 +31,25 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   private
 
+  def sign_up_params
+    permitted = params.require(:user).permit(:email, :phone_number, :password, :password_confirmation, :name)
+    # Convert empty strings to nil for optional fields (name is required, so don't convert it)
+    permitted[:email] = nil if permitted[:email].blank?
+    permitted[:phone_number] = nil if permitted[:phone_number].blank?
+    # Name is required, so keep it as is (will be validated by model)
+    permitted
+  end
+
   def respond_with(_resource, _opts = {})
     if resource.persisted?
       render json: {
         status: { code: 200, message: "Signed up successfully." },
-        data: { id: resource.id, email: resource.email, name: resource.name }
+        data: { 
+          id: resource.id, 
+          email: resource.email, 
+          phone_number: resource.phone_number,
+          name: resource.name 
+        }
       }
     else
       render json: {

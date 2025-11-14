@@ -4,14 +4,26 @@ class Users::SessionsController < Devise::SessionsController
 
   # POST /login
   def create
-    authenticated_resource = warden.authenticate(auth_options)
-    unless authenticated_resource
+    # Support login with email or phone_number
+    login_param = params[:user]&.dig(:login) || params[:user]&.dig(:email) || params[:user]&.dig(:phone_number)
+    password = params[:user]&.dig(:password)
+    
+    unless login_param && password
       return render json: {
-        status: { code: 401, message: 'Invalid email or password.' }
+        status: { code: 401, message: 'Please provide email/phone and password.' }
       }, status: :unauthorized
     end
-    self.resource = authenticated_resource
-    # no cookie session
+
+    # Find user by email or phone_number
+    user = User.find_for_database_authentication(login: login_param)
+    
+    unless user && user.valid_password?(password)
+      return render json: {
+        status: { code: 401, message: 'Invalid email/phone or password.' }
+      }, status: :unauthorized
+    end
+
+    self.resource = user
     sign_in(resource_name, resource, store: false)
 
     # Explicitly generate and expose JWT in both header and body
@@ -21,6 +33,7 @@ class Users::SessionsController < Devise::SessionsController
     user_json = {
       id: resource.id,
       email: resource.email,
+      phone_number: resource.phone_number,
       name: resource.name
     }
 
@@ -50,6 +63,7 @@ class Users::SessionsController < Devise::SessionsController
       data: {
         id: resource.id,
         email: resource.email,
+        phone_number: resource.phone_number,
         name: resource.name
       }
     }, status: :ok

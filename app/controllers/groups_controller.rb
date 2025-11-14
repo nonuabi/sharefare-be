@@ -15,11 +15,24 @@ class GroupsController < ApplicationController
           is_new = ActiveModel::Type::Boolean.new.cast(member[:newUser])
           if is_new
             temp_password = 'Temp@1234'
-            user = User.create!(email: member[:email], password: temp_password, password_confirmation: temp_password,
-                                name: "(New) #{member[:email]}")
+            identifier = member[:email] || member[:phone_number]
+            user = User.create!(
+              email: member[:email],
+              phone_number: member[:phone_number],
+              password: temp_password,
+              password_confirmation: temp_password,
+              name: member[:name] || "(New) #{identifier}"
+            )
             group.group_members.create!(user_id: user.id)
           else
-            user = User.find_by(id: member[:id], email: member[:email])
+            # Find user by id, or by email/phone_number if id not provided
+            user = if member[:id].present?
+              User.find_by(id: member[:id])
+            elsif member[:email].present?
+              User.find_by(email: member[:email])
+            elsif member[:phone_number].present?
+              User.find_by(phone_number: member[:phone_number])
+            end
             next unless user
 
             group.group_members.create!(user_id: user.id) unless group.users.include?(user)
@@ -72,7 +85,7 @@ class GroupsController < ApplicationController
   end
 
   def members_params
-    permitted = params.require(:group).permit(members: %i[email id name newUser])
+    permitted = params.require(:group).permit(members: %i[email phone_number id name newUser])
     permitted[:members]
   end
 
