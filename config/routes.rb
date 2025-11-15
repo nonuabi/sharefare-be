@@ -22,9 +22,15 @@ Rails.application.routes.draw do
 
     resources :groups, only: %i[show index create update] do
       resources :expenses, only: %i[index create]
+      resources :invites, only: [:create], controller: 'invites'
     end
 
     resources :users, only: [:index]
+    
+    # Invite routes
+    get '/invites/personal', to: 'invites#personal'
+    get '/invites/:token', to: 'invites#show'
+    post '/invites/:token/accept', to: 'invites#accept'
   end
 
   # Avatar endpoint (outside API scope, no auth required for public avatars)

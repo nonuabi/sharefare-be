@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_191408) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_055139) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,6 +27,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_191408) do
     t.index ["creator_id"], name: "index_expenses_on_creator_id"
     t.index ["group_id"], name: "index_expenses_on_group_id"
     t.index ["payer_id"], name: "index_expenses_on_payer_id"
+  end
+
+  create_table "group_invites", force: :cascade do |t|
+    t.bigint "group_id", null: false
+    t.bigint "inviter_id", null: false
+    t.string "token", null: false
+    t.datetime "expires_at"
+    t.boolean "used", default: false, null: false
+    t.datetime "used_at"
+    t.bigint "used_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id"], name: "index_group_invites_on_group_id"
+    t.index ["inviter_id"], name: "index_group_invites_on_inviter_id"
+    t.index ["token"], name: "index_group_invites_on_token", unique: true
+    t.index ["used_by_id"], name: "index_group_invites_on_used_by_id"
   end
 
   create_table "group_members", force: :cascade do |t|
@@ -91,6 +107,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_191408) do
   add_foreign_key "expenses", "groups"
   add_foreign_key "expenses", "users", column: "creator_id"
   add_foreign_key "expenses", "users", column: "payer_id"
+  add_foreign_key "group_invites", "groups"
+  add_foreign_key "group_invites", "users", column: "inviter_id"
+  add_foreign_key "group_invites", "users", column: "used_by_id"
   add_foreign_key "group_members", "groups"
   add_foreign_key "group_members", "users"
   add_foreign_key "groups", "users", column: "owner_id"
