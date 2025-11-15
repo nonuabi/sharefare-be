@@ -29,12 +29,13 @@ class GroupsController < ApplicationController
       render json: { message: 'Group created successfully', group: group_json(group), group_members: group.users },
              status: :ok
     else
-      render json: { error: 'Error creating group', message: group.messages }, status: :bad_request
+      error_message = group.errors.full_messages.to_sentence
+      render json: { error: 'Could not create group', message: error_message.presence || 'Please check your input and try again.' }, status: :bad_request
     end
   rescue StandardError => e
     Rails.logger.info { "Group not able to be created: #{e.full_message}" }
     group.destroy if group&.persisted?
-    render json: { error: 'Error creating group', message: e.message }, status: :bad_request
+    render json: { error: 'Could not create group', message: 'Something went wrong. Please try again later.' }, status: :bad_request
   end
 
   def update

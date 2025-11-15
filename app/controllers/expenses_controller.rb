@@ -8,7 +8,7 @@ class ExpensesController < GroupsController
     render json: { expenses: expenses.as_json(include: :split_expenses) }, status: :ok
   rescue StandardError => e
     Rails.logger.info { "Expenses not able to be fetched: #{e.full_message}" }
-    render json: { error: 'Error fetching expenses', message: e.message }, status: :unprocessable_entity
+    render json: { error: 'Could not load expenses', message: 'Something went wrong. Please try again later.' }, status: :unprocessable_entity
   end
 
   def create
@@ -56,7 +56,8 @@ class ExpensesController < GroupsController
     render json: { message: 'Expense created successfully', expense: expense }, status: :created
   rescue StandardError => e
     Rails.logger.info { "Expense not able to be created: #{e.full_message}" }
-    render json: { error: 'Error creating expense', message: e.message }, status: :unprocessable_entity
+    error_message = e.message.include?('validation') ? e.message : 'Could not add expense. Please check your input and try again.'
+    render json: { error: 'Could not add expense', message: error_message }, status: :unprocessable_entity
   end
 
   private

@@ -10,7 +10,8 @@ class Users::SessionsController < Devise::SessionsController
     
     unless login_param && password
       return render json: {
-        status: { code: 401, message: 'Please provide email/phone and password.' }
+        error: 'Login failed',
+        message: 'Please provide your email or phone number and password.'
       }, status: :unauthorized
     end
 
@@ -19,7 +20,8 @@ class Users::SessionsController < Devise::SessionsController
     
     unless user && user.valid_password?(password)
       return render json: {
-        status: { code: 401, message: 'Invalid email/phone or password.' }
+        error: 'Login failed',
+        message: 'Invalid email/phone or password. Please check your credentials and try again.'
       }, status: :unauthorized
     end
 

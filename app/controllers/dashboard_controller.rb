@@ -70,6 +70,15 @@ class DashboardController < ApplicationController
             else
               outstanding_balances_hash[other_user.id][:direction] = '-'
             end
+            # Initialize groups array if not present (for backward compatibility)
+            outstanding_balances_hash[other_user.id][:groups] ||= []
+            # Add group to groups list if not already present
+            unless outstanding_balances_hash[other_user.id][:groups].any? { |g| g[:id] == group.id }
+              outstanding_balances_hash[other_user.id][:groups] << {
+                id: group.id,
+                name: group.name
+              }
+            end
           else
               outstanding_balances_hash[other_user.id] = {
                 user: {
@@ -80,21 +89,48 @@ class DashboardController < ApplicationController
                   avatar_url: other_user.avatar_url_or_generate
                 },
               amount: net_amount,
-              direction: net_amount > 0 ? '+' : '-'
+              direction: net_amount > 0 ? '+' : '-',
+              groups: [{
+                id: group.id,
+                name: group.name
+              }]
             }
           end
         end
       end
     end
     
-    # Convert hash to array, filter zero balances, and format
+    # Convert hash to array, filter zero balances, format, and sort by most recent activity
     outstanding_balances = outstanding_balances_hash.values
       .select { |b| b[:amount].abs > 0.01 }
       .map { |b| 
+        # Find the most recent expense date across all groups for this balance
+        group_ids = (b[:groups] || []).map { |g| g[:id] }
+        most_recent_expense_date = if group_ids.any?
+          Expense.joins(:group)
+            .where(group_id: group_ids)
+            .where('expenses.payer_id = ? OR expenses.id IN (SELECT expense_id FROM split_expenses WHERE user_id = ?)', 
+                   current_user.id, current_user.id)
+            .maximum(:created_at)
+        else
+          nil
+        end
+        
         {
           user: b[:user],
           amount: b[:amount].abs.round(2),
-          direction: b[:amount] > 0 ? '+' : '-'
+          direction: b[:amount] > 0 ? '+' : '-',
+          groups: b[:groups] || [],
+          _most_recent_date: most_recent_expense_date || Time.at(0) # Use epoch if no expenses
+        }
+      }
+      .sort_by { |b| -(b[:_most_recent_date] || Time.at(0)).to_f } # Sort descending (most recent first)
+      .map { |b| 
+        {
+          user: b[:user],
+          amount: b[:amount],
+          direction: b[:direction],
+          groups: b[:groups]
         }
       }
     
