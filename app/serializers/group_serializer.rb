@@ -76,9 +76,10 @@ class GroupSerializer < ActiveModel::Serializer
   end
 
   def recent_expenses
+    # Return all expenses, ordered by most recent first
+    # The frontend can limit the display as needed
     expenses = object.expenses.includes(:payer, :creator, :split_expenses)
                      .order(created_at: :desc)
-                     .limit(10)
     
     expenses.map do |expense|
       {
