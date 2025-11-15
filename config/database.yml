@@ -5,16 +5,16 @@ default: &default
 
 development:
   <<: *default
-  database: sharefare_be_development
+  database: chopbill_be_development
 
 test:
   <<: *default
-  database: sharefare_be_test
+  database: chopbill_be_test
 
 production:
   <<: *default
-  database: <%= ENV["SHAREFARE_BE_DATABASE_NAME"] %>
-  username: <%= ENV["SHAREFARE_BE_DATABASE_USERNAME"] %>
-  password: <%= ENV["SHAREFARE_BE_DATABASE_PASSWORD"] %>
-  host: <%= ENV["SHAREFARE_BE_DATABASE_HOST"]%>
+  database: <%= ENV["CHOPBILL_BE_DATABASE_NAME"] %>
+  username: <%= ENV["CHOPBILL_BE_DATABASE_USERNAME"] %>
+  password: <%= ENV["CHOPBILL_BE_DATABASE_PASSWORD"] %>
+  host: <%= ENV["CHOPBILL_BE_DATABASE_HOST"]%>
   port: 5432

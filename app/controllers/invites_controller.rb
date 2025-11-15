@@ -7,14 +7,14 @@ class InvitesController < ApplicationController
   # Generate a personal invite code for the user
   def personal
     # Generate a simple invite code based on user ID (can be enhanced)
-    invite_code = "SF#{current_user.id.to_s.rjust(6, '0')}#{SecureRandom.hex(4).upcase}"
+    invite_code = "CB#{current_user.id.to_s.rjust(6, '0')}#{SecureRandom.hex(4).upcase}"
     
-    invite_url = "sharefare://signup?ref=#{invite_code}"
+    invite_url = "chopbill://signup?ref=#{invite_code}"
     
     render json: {
       invite_code: invite_code,
       invite_url: invite_url,
-      message: 'Share this link with your friends to invite them to ShareFare!'
+      message: 'Share this link with your friends to invite them to ChopBill!'
     }, status: :ok
   end
 

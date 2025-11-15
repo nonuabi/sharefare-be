@@ -35,7 +35,7 @@ class GroupInvite < ApplicationRecord
   def invite_url
     # In production, this would be your app's deep link or web URL
     # For now, we'll use a simple format that can be handled by the app
-    "sharefare://invite/#{token}"
+    "chopbill://invite/#{token}"
   end
 
   private

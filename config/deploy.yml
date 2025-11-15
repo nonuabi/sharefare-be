@@ -1,8 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
-service: sharefare_be
+service: chopbill_be
 
 # Name of the container image.
-image: your-user/sharefare_be
+image: your-user/chopbill_be
 
 # Deploy to these servers.
 servers:
@@ -57,7 +57,7 @@ aliases:
 # Use a persistent storage volume for sqlite database files and local Active Storage files.
 # Recommended to change this to a mounted volume path that is backed up off server.
 volumes:
-  - "sharefare_be_storage:/rails/storage"
+  - "chopbill_be_storage:/rails/storage"
 
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
