@@ -23,6 +23,7 @@ Rails.application.routes.draw do
     resources :groups, only: %i[show index create update] do
       resources :expenses, only: %i[index create]
       resources :invites, only: [:create], controller: 'invites'
+      resources :settlements, only: %i[index create show]
     end
 
     resources :users, only: [:index]

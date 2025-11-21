@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_055139) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_115118) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -64,6 +64,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_055139) do
     t.index ["owner_id"], name: "index_groups_on_owner_id"
   end
 
+  create_table "settlements", force: :cascade do |t|
+    t.bigint "group_id", null: false
+    t.bigint "payer_id", null: false
+    t.bigint "payee_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.bigint "settled_by_id", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id", "payer_id", "payee_id"], name: "index_settlements_on_group_id_and_payer_id_and_payee_id"
+    t.index ["group_id"], name: "index_settlements_on_group_id"
+    t.index ["payee_id"], name: "index_settlements_on_payee_id"
+    t.index ["payer_id"], name: "index_settlements_on_payer_id"
+    t.index ["settled_by_id"], name: "index_settlements_on_settled_by_id"
+  end
+
   create_table "split_expenses", force: :cascade do |t|
     t.float "paid_amount", default: 0.0
     t.float "due_amount", default: 0.0
@@ -113,6 +129,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_055139) do
   add_foreign_key "group_members", "groups"
   add_foreign_key "group_members", "users"
   add_foreign_key "groups", "users", column: "owner_id"
+  add_foreign_key "settlements", "groups"
+  add_foreign_key "settlements", "users", column: "payee_id"
+  add_foreign_key "settlements", "users", column: "payer_id"
+  add_foreign_key "settlements", "users", column: "settled_by_id"
   add_foreign_key "split_expenses", "expenses"
   add_foreign_key "split_expenses", "users"
 end

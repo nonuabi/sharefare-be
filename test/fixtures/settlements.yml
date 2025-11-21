@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  group: one
+  payer: one
+  payee: one
+  amount: 9.99
+  settled_by: one
+  notes: MyText
+
+two:
+  group: two
+  payer: two
+  payee: two
+  amount: 9.99
+  settled_by: two
+  notes: MyText

@@ -7,6 +7,7 @@ class DashboardController < ApplicationController
     # Eager load associations to avoid N+1 queries
     user_groups = current_user.groups.includes(
       :users, 
+      :settlements,
       expenses: :split_expenses,
       split_expenses: :expense
     )
@@ -55,7 +56,22 @@ class DashboardController < ApplicationController
             .where(user_id: current_user.id)
             .sum("COALESCE(NULLIF(split_expenses.due_amount, 0), split_expenses.paid_amount)")
           
-          net_amount = amount_they_owe_me - amount_i_owe_them
+          # Account for settlements between these two users
+          # Settlements where current_user paid other_user (reduces what current_user owes other_user)
+          settlements_i_paid = group.settlements
+            .where(payer_id: current_user.id, payee_id: other_user.id)
+            .sum(:amount)
+          
+          # Settlements where other_user paid current_user (reduces what other_user owes current_user)
+          settlements_they_paid = group.settlements
+            .where(payer_id: other_user.id, payee_id: current_user.id)
+            .sum(:amount)
+          
+          # Net amount calculation:
+          # Base net = what they owe me - what I owe them
+          # Add settlements where I paid (reduces what I owe, increases net)
+          # Subtract settlements where they paid (reduces what they owe, decreases net)
+          net_amount = (amount_they_owe_me - amount_i_owe_them) + settlements_i_paid - settlements_they_paid
         rescue => e
           Rails.logger.error { "Error calculating balance with user #{other_user.id}: #{e.message}" }
           next

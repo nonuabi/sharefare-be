@@ -8,6 +8,7 @@ class GroupSerializer < ActiveModel::Serializer
              :members,
              :member_balances,
              :recent_expenses,
+             :recent_settlements,
              :created_at, :updated_at
 
   def members
@@ -55,10 +56,19 @@ class GroupSerializer < ActiveModel::Serializer
         .joins(:expense)
         .where(expenses: { payer_id: user.id })
         .where(user_id: current_user.id)
-        .sum(:due_amount)
+        .sum("COALESCE(NULLIF(split_expenses.due_amount, 0), split_expenses.paid_amount)")
       
-      # Net balance from current_user's perspective
-      balance = amount_they_owe_me - amount_i_owe_them
+      # Account for settlements between these two users
+      settlements_i_paid = object.settlements
+        .where(payer_id: current_user.id, payee_id: user.id)
+        .sum(:amount)
+      
+      settlements_they_paid = object.settlements
+        .where(payer_id: user.id, payee_id: current_user.id)
+        .sum(:amount)
+      
+      # Net balance from current_user's perspective (accounting for settlements)
+      balance = (amount_they_owe_me - amount_i_owe_them) + settlements_i_paid - settlements_they_paid
       
       {
         user: {
@@ -96,6 +106,40 @@ class GroupSerializer < ActiveModel::Serializer
         created_at: expense.created_at,
         notes: expense.notes,
         split_count: expense.split_expenses.count
+      }
+    end
+  end
+
+  def recent_settlements
+    # Return all settlements, ordered by most recent first
+    settlements = object.settlements
+      .includes(:payer, :payee, :settled_by)
+      .order(created_at: :desc)
+    
+    settlements.map do |settlement|
+      {
+        id: settlement.id,
+        payer: {
+          id: settlement.payer.id,
+          name: settlement.payer.name,
+          email: settlement.payer.email,
+          phone_number: settlement.payer.phone_number,
+          avatar_url: settlement.payer.avatar_url_or_generate
+        },
+        payee: {
+          id: settlement.payee.id,
+          name: settlement.payee.name,
+          email: settlement.payee.email,
+          phone_number: settlement.payee.phone_number,
+          avatar_url: settlement.payee.avatar_url_or_generate
+        },
+        amount: settlement.amount.to_f,
+        notes: settlement.notes,
+        settled_by: {
+          id: settlement.settled_by.id,
+          name: settlement.settled_by.name
+        },
+        created_at: settlement.created_at.iso8601
       }
     end
   end

@@ -10,6 +10,7 @@ class Group < ApplicationRecord
 
   has_many :expenses
   has_many :split_expenses, through: :expenses
+  has_many :settlements
 
   # total expense in a group
   def total_expense
@@ -19,6 +20,7 @@ class Group < ApplicationRecord
   # balance for a user in the group
   # Positive balance = user is owed money (they paid more than their share)
   # Negative balance = user owes money (they paid less than their share)
+  # Accounts for settlements: settlements reduce the balance
   def balance_for_user(user)
     return 0 unless users.include?(user)
 
@@ -55,7 +57,21 @@ class Group < ApplicationRecord
       end
     end
     
-    # Balance = what they paid - what they owe
-    total_paid - total_owed
+    # Calculate base balance = what they paid - what they owe
+    base_balance = total_paid - total_owed
+    
+    # Account for settlements
+    # Balance = what you paid - what you owe
+    # Positive balance = you're owed money
+    # Negative balance = you owe money
+    settlements_as_payer = settlements.where(payer_id: user.id).sum(:amount)
+    settlements_as_payee = settlements.where(payee_id: user.id).sum(:amount)
+    
+    # Settlement logic:
+    # - If user paid someone (settlement as payer): reduces what they owe → balance INCREASES (becomes less negative)
+    #   Example: balance = -₹100, pay ₹50 → new balance = -₹50 (add settlement)
+    # - If user received payment (settlement as payee): reduces what they're owed → balance DECREASES (becomes less positive)
+    #   Example: balance = +₹100, receive ₹50 → new balance = +₹50 (subtract settlement)
+    base_balance + settlements_as_payer - settlements_as_payee
   end
 end

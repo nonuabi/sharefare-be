@@ -80,7 +80,7 @@ class GroupsController < ApplicationController
   end
 
   def find_group
-    @group = Group.includes(:users).find_by(id: params[:id] || params[:group_id])
+    @group = Group.includes(:users, :settlements).find_by(id: params[:id] || params[:group_id])
     return if @group
 
     render json: { error: 'Group not found!' }, status: :not_found
