@@ -13,6 +13,63 @@ class MeController < ApplicationController
     end
   end
 
+  def destroy
+    # Prevent deletion if user owns groups
+    if current_user.owned_groups.any?
+      return render json: {
+        error: 'Cannot delete account',
+        message: 'You cannot delete your account while you own groups. Please transfer ownership or delete your groups first.'
+      }, status: :unprocessable_entity
+    end
+
+    # Check if user has expenses (as payer or creator)
+    # This is a soft check - we'll let the database handle the constraint
+    # but provide a helpful message if deletion fails
+    has_expenses = current_user.expenses.exists? || 
+                   Expense.where(payer_id: current_user.id).exists? ||
+                   Expense.where(creator_id: current_user.id).exists?
+
+    if has_expenses
+      return render json: {
+        error: 'Cannot delete account',
+        message: 'You cannot delete your account because you have expenses associated with it. Please contact support for assistance.'
+      }, status: :unprocessable_entity
+    end
+
+    # Remove user from all groups they're a member of
+    current_user.group_members.destroy_all
+
+    # Delete group invites created by this user
+    current_user.group_invites.destroy_all
+
+    # Delete the user account
+    # This will cascade through other associations
+    user_id = current_user.id
+    current_user.destroy
+
+    render json: {
+      message: 'Account deleted successfully'
+    }, status: :ok
+  rescue ActiveRecord::RecordNotDestroyed => e
+    render json: {
+      error: 'Cannot delete account',
+      message: 'Unable to delete account. You may have expenses or settlements associated with your account. Please contact support if this issue persists.'
+    }, status: :unprocessable_entity
+  rescue ActiveRecord::InvalidForeignKey => e
+    Rails.logger.error "Foreign key constraint violation while deleting user: #{e.message}"
+    render json: {
+      error: 'Cannot delete account',
+      message: 'Unable to delete account due to associated data. Please contact support for assistance.'
+    }, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error "Error deleting user account: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    render json: {
+      error: 'Cannot delete account',
+      message: 'An error occurred while deleting your account. Please try again later.'
+    }, status: :internal_server_error
+  end
+
   private
 
   def user_payload(user)
