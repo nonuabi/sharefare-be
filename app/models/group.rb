@@ -4,13 +4,13 @@ class Group < ApplicationRecord
   has_paper_trail
 
   belongs_to :owner, class_name: 'User', foreign_key: 'owner_id'
-  has_many :group_members
+  has_many :group_members, dependent: :destroy
   has_many :users, through: :group_members
-  has_many :group_invites
+  has_many :group_invites, dependent: :destroy
 
-  has_many :expenses
-  has_many :split_expenses, through: :expenses
-  has_many :settlements
+  has_many :expenses, dependent: :destroy
+  has_many :split_expenses, through: :expenses, dependent: :destroy
+  has_many :settlements, dependent: :destroy
 
   # total expense in a group
   def total_expense
