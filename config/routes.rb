@@ -21,6 +21,11 @@ Rails.application.routes.draw do
     delete '/me', to: 'me#destroy'
     get '/dashboard', to: 'dashboard#show'
 
+    # Email verification routes
+    post '/email_verifications/send_code', to: 'email_verifications#send_code'
+    post '/email_verifications/verify_code', to: 'email_verifications#verify_code'
+    get '/email_verifications/status', to: 'email_verifications#status'
+
     resources :groups, only: %i[show index create update] do
       resources :expenses, only: %i[index create]
       resources :invites, only: [:create], controller: 'invites'

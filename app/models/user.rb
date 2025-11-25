@@ -67,6 +67,49 @@ class User < ApplicationRecord
     name.presence || email.presence || phone_number.presence || "User #{id}"
   end
 
+  # Email verification methods
+  VERIFICATION_CODE_EXPIRY = 15.minutes
+  VERIFICATION_CODE_LENGTH = 6
+
+  def generate_verification_code
+    code = SecureRandom.random_number(10**VERIFICATION_CODE_LENGTH).to_s.rjust(VERIFICATION_CODE_LENGTH, '0')
+    update(
+      email_verification_code: code,
+      email_verification_code_sent_at: Time.current,
+      email_verified: false
+    )
+    code
+  end
+
+  def verification_code_valid?(code)
+    return false if email_verification_code.blank?
+    return false if email_verification_code_sent_at.nil?
+    return false if Time.current > email_verification_code_sent_at + VERIFICATION_CODE_EXPIRY
+    
+    ActiveSupport::SecurityUtils.secure_compare(
+      email_verification_code.to_s,
+      code.to_s
+    )
+  end
+
+  def verify_email!(code)
+    return false unless verification_code_valid?(code)
+    
+    update(
+      email_verified: true,
+      email_verification_code: nil,
+      email_verification_code_sent_at: nil
+    )
+  end
+
+  def can_resend_verification_code?
+    return false if email.blank?
+    return true if email_verification_code_sent_at.nil?
+    
+    # Allow resend after 1 minute
+    Time.current > email_verification_code_sent_at + 1.minute
+  end
+
   private
 
   def email_or_phone_required

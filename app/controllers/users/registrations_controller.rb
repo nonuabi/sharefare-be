@@ -11,11 +11,23 @@ class Users::RegistrationsController < Devise::RegistrationsController
       token, _payload = Warden::JWTAuth::UserEncoder.new.call(resource, :user, nil)
       response.set_header("Authorization", "Bearer #{token}")
 
+      # Automatically send email verification code if email is provided
+      if resource.email.present?
+        begin
+          code = resource.generate_verification_code
+          EmailVerificationMailer.verification_code_email(resource, code).deliver_now
+        rescue => e
+          # Log error but don't fail signup if email sending fails
+          Rails.logger.error "Failed to send verification email to #{resource.email}: #{e.message}"
+        end
+      end
+
       user_json = { 
         id: resource.id, 
         email: resource.email, 
         phone_number: resource.phone_number,
-        name: resource.name 
+        name: resource.name,
+        email_verified: resource.email_verified
       }
 
       render json: {
